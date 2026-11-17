@@ -109,6 +109,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
     _navigatorKey.currentState?.push(StudioPageRoute<void>(
       builder: (_) => BulkGeneratorScreen(
         portuguese: _portuguese,
+        languageCode: _languageCode,
         onSaved: _addRecords,
       ),
     ));
@@ -118,6 +119,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
     _navigatorKey.currentState?.push(StudioPageRoute<void>(
       builder: (_) => ScannerScreen(
         portuguese: _portuguese,
+        languageCode: _languageCode,
         onSaved: _addRecord,
       ),
     ));
@@ -127,6 +129,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
     _navigatorKey.currentState?.push(StudioPageRoute<void>(
       builder: (_) => BarcodeScreen(
         portuguese: _portuguese,
+        languageCode: _languageCode,
         onSaved: _addRecord,
       ),
     ));
@@ -137,6 +140,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
       builder: (_) => HistoryScreen(
         records: _records,
         portuguese: _portuguese,
+        languageCode: _languageCode,
         onFavorite: _toggleFavorite,
         onDelete: _deleteRecord,
         onClear: _clearHistory,
@@ -188,6 +192,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
                   child: _tab == 0
                       ? HomeScreen(
                           portuguese: _portuguese,
+                          languageCode: _languageCode,
                           records: _records,
                           onGenerate: _openGenerator,
                           onScan: _openScanner,
@@ -203,6 +208,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
                           ? HistoryScreen(
                               records: _records,
                               portuguese: _portuguese,
+                              languageCode: _languageCode,
                               favoritesOnly: true,
                               embedded: true,
                               onFavorite: _toggleFavorite,
@@ -211,6 +217,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
                             )
                           : MoreScreen(
                               portuguese: _portuguese,
+                              languageCode: _languageCode,
                               darkMode: _darkMode,
                               onGenerate: _openGenerator,
                               onScan: _openScanner,
