@@ -15,6 +15,7 @@ void main() {
     await tester.pumpWidget(const QRStudioApp());
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('Gerar código QR'));
     await tester.tap(find.text('Gerar código QR'));
     await tester.pumpAndSettle();
     expect(find.byType(GeneratorScreen), findsOneWidget);
@@ -22,6 +23,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('Histórico QR'));
     await tester.tap(find.text('Histórico QR'));
     await tester.pumpAndSettle();
     expect(find.byType(HistoryScreen), findsOneWidget);
@@ -29,6 +31,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('Analisador QR'));
     await tester.tap(find.text('Analisador QR'));
     await tester.pumpAndSettle();
     expect(find.byType(QrAnalyzerScreen), findsOneWidget);
