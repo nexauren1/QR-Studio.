@@ -7,6 +7,7 @@ import '../screens/generator_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/more_screen.dart';
+import '../screens/qr_analyzer_screen.dart';
 import '../screens/scanner_screen.dart';
 import '../services/studio_storage.dart';
 import '../theme/studio_theme.dart';
@@ -25,6 +26,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   bool _portuguese = true;
   bool _ready = false;
   int _tab = 0;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -91,7 +93,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openGenerator() {
-    Navigator.of(context).push(StudioPageRoute<void>(
+    _navigatorKey.currentState?.push(StudioPageRoute<void>(
       builder: (_) => GeneratorScreen(
         portuguese: _portuguese,
         onSaved: _addRecord,
@@ -100,7 +102,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openBulkGenerator() {
-    Navigator.of(context).push(StudioPageRoute<void>(
+    _navigatorKey.currentState?.push(StudioPageRoute<void>(
       builder: (_) => BulkGeneratorScreen(
         portuguese: _portuguese,
         onSaved: _addRecords,
@@ -109,7 +111,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openScanner() {
-    Navigator.of(context).push(StudioPageRoute<void>(
+    _navigatorKey.currentState?.push(StudioPageRoute<void>(
       builder: (_) => ScannerScreen(
         portuguese: _portuguese,
         onSaved: _addRecord,
@@ -118,7 +120,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openBarcodeGenerator() {
-    Navigator.of(context).push(StudioPageRoute<void>(
+    _navigatorKey.currentState?.push(StudioPageRoute<void>(
       builder: (_) => BarcodeScreen(
         portuguese: _portuguese,
         onSaved: _addRecord,
@@ -127,7 +129,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openHistory() {
-    Navigator.of(context).push(StudioPageRoute<void>(
+    _navigatorKey.currentState?.push(StudioPageRoute<void>(
       builder: (_) => HistoryScreen(
         records: _records,
         portuguese: _portuguese,
@@ -138,9 +140,16 @@ class _QRStudioAppState extends State<QRStudioApp> {
     ));
   }
 
+  void _openAnalyzer() {
+    _navigatorKey.currentState?.push(StudioPageRoute<void>(
+      builder: (_) => QrAnalyzerScreen(portuguese: _portuguese),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'QR Studio',
       debugShowCheckedModeBanner: false,
       theme: StudioTheme.light,
@@ -176,6 +185,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
                           onFavorites: () => setState(() => _tab = 1),
                           onMore: () => setState(() => _tab = 2),
                           onBarcode: _openBarcodeGenerator,
+                          onAnalyze: _openAnalyzer,
                           onOpenRecord: _showRecord,
                         )
                       : _tab == 1
@@ -196,6 +206,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
                               onBarcode: _openBarcodeGenerator,
                               onBulk: _openBulkGenerator,
                               onHistory: _openHistory,
+                              onAnalyze: _openAnalyzer,
                               onThemeChanged: (value) {
                                 setState(() => _darkMode = value);
                                 StudioStorage.saveDarkMode(value);
@@ -234,8 +245,10 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _showRecord(CodeRecord record) {
+    final modalContext = _navigatorKey.currentContext;
+    if (modalContext == null) return;
     showModalBottomSheet<void>(
-      context: context,
+      context: modalContext,
       showDragHandle: true,
       backgroundColor: Theme.of(context).cardTheme.color,
       builder: (sheetContext) => Padding(
