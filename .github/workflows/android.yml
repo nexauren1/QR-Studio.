@@ -47,7 +47,7 @@ jobs:
           echo "Universal APK: $readable_size ($size bytes)"
           {
             echo "### Universal Android APK"
-            echo "- File: `app-release.apk`"
+            echo "- File: app-release.apk"
             echo "- Download size: $readable_size ($size bytes)"
             echo "- Architectures: ARM32 (armeabi-v7a) and ARM64 (arm64-v8a)"
             echo "- Delivery: one APK containing both supported ARM architectures"
