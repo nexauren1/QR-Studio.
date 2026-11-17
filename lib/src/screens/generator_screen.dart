@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -241,7 +240,7 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: _security,
+                      initialValue: _security,
                       decoration: InputDecoration(
                           labelText: tr('Security', 'Segurança')),
                       items: const [
