@@ -61,7 +61,7 @@ val qrStudioKeyPropertiesFile = rootProject.file("key.properties")
 if (qrStudioKeyPropertiesFile.exists()) {
     qrStudioKeyProperties.load(FileInputStream(qrStudioKeyPropertiesFile))
 }
-android {
+extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
     signingConfigs {
         create("release") {
             if (qrStudioKeyPropertiesFile.exists()) {
@@ -117,6 +117,11 @@ if kts.exists():
     if "QR_STUDIO_SIGNING_CONFIG" not in content:
         if "import java.util.Properties" not in content:
             content = "import java.util.Properties\nimport java.io.FileInputStream\n\n" + content
+        new_android_block = "extensions.configure<com.android.build.api.dsl.ApplicationExtension> {"
+        if "android {" in content:
+            content = content.replace("android {", new_android_block, 1)
+        elif new_android_block not in content:
+            raise SystemExit("Could not find the generated Android application DSL block.")
         kts.write_text(content.rstrip() + "\n\n" + kts_config, encoding="utf-8")
 elif groovy.exists():
     content = groovy.read_text(encoding="utf-8")
