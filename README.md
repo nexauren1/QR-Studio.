@@ -31,6 +31,7 @@ QR Studio by Nexauren is a Flutter app for creating, scanning, styling, organisi
 
 ### Organisation
 - Bulk QR generator for up to 50 lines at a time.
+- QR content analyzer for websites, Wi-Fi payloads, contact cards, calendar events, geographic coordinates, phone numbers, email actions and plain text.
 - Local history with search and generated/scanned filters.
 - Favorites, individual delete and clear-history actions.
 - Portuguese and English interface.
