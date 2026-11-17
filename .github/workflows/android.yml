@@ -91,7 +91,18 @@ jobs:
           set -euo pipefail
           apk="build/app/outputs/flutter-apk/app-release.apk"
           test -f "$apk"
-          apksigner verify --verbose --print-certs "$apk" > build/apk-signature.txt
+
+          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [[ -z "$sdk_root" || ! -d "$sdk_root/build-tools" ]]; then
+            echo "Android SDK build-tools directory was not found." >&2
+            exit 1
+          fi
+          apksigner_bin="$(find "$sdk_root/build-tools" -type f -name apksigner -print | sort -V | tail -n 1)"
+          if [[ -z "$apksigner_bin" ]]; then
+            echo "apksigner was not found in Android SDK build-tools." >&2
+            exit 1
+          fi
+          "$apksigner_bin" verify --verbose --print-certs "$apk" > build/apk-signature.txt
           cat build/apk-signature.txt
           size=$(stat -c%s "$apk")
           readable_size=$(numfmt --to=iec-i --suffix=B "$size")
