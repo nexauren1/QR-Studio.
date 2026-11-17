@@ -96,7 +96,7 @@ class QrContentAnalyzer {
       final parts = value.substring(6).split(':');
       return QrAnalysisResult(
         type: 'SMS message',
-        summary: parts.isEmpty ? 'An SMS action was detected.' : 'To: \${parts[0]}',
+        summary: parts.isEmpty ? 'An SMS action was detected.' : 'To: ' + parts[0],
         details: <String, String>{
           if (parts.isNotEmpty) 'Phone': parts[0],
           if (parts.length > 1) 'Message': parts.sublist(1).join(':'),
@@ -111,7 +111,7 @@ class QrContentAnalyzer {
     if (parsed != null && parsed.scheme.toLowerCase() == 'mailto') {
       return QrAnalysisResult(
         type: 'Email',
-        summary: parsed.path.isEmpty ? 'An email action was detected.' : 'To: \${parsed.path}',
+        summary: parsed.path.isEmpty ? 'An email action was detected.' : 'To: ' + parsed.path,
         details: <String, String>{
           if (parsed.path.isNotEmpty) 'Email address': parsed.path,
           if ((parsed.queryParameters['subject'] ?? '').isNotEmpty)
