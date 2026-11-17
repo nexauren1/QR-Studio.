@@ -1,7 +1,11 @@
+import 'dart:io';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../models/code_record.dart';
 import '../theme/studio_theme.dart';
@@ -25,6 +29,7 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
   final _controller = TextEditingController();
   List<String> _values = [];
   bool _busy = false;
+  int _duplicatesRemoved = 0;
 
   String tr(String en, String pt) => widget.portuguese ? pt : en;
 
@@ -40,9 +45,11 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
     await Future.delayed(const Duration(milliseconds: 320));
     if (!mounted) return;
     final unique = <String>{};
+    var duplicatesRemoved = 0;
     for (final line in _controller.text.split(RegExp(r'[\r\n]+'))) {
       final value = line.trim();
-      if (value.isNotEmpty) unique.add(value);
+      if (value.isEmpty) continue;
+      if (!unique.add(value)) duplicatesRemoved++;
       if (unique.length >= 50) break;
     }
     if (unique.isEmpty) {
@@ -54,6 +61,7 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
     final values = unique.toList();
     setState(() {
       _values = values;
+      _duplicatesRemoved = duplicatesRemoved;
       _busy = false;
     });
     final now = DateTime.now();
@@ -73,6 +81,46 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
       _values.join('\n'),
       subject: tr('QR Studio bulk list', 'Lista QR Studio'),
     );
+  }
+
+  Future<void> _exportCsv() async {
+    if (_values.isEmpty || _busy) return;
+    setState(() => _busy = true);
+    try {
+      String csvCell(String value) =>
+          '"' + value.replaceAll('"', '""') + '"';
+      final rows = <List<String>>[
+        <String>['Number', 'QR content'],
+        for (var index = 0; index < _values.length; index++)
+          <String>[(index + 1).toString(), _values[index]],
+      ];
+      final csv = rows
+          .map((row) => row.map(csvCell).join(','))
+          .join('\r\n');
+      final directory = await getTemporaryDirectory();
+      final file = File(
+        directory.path +
+            '/qr_studio_batch_' +
+            DateTime.now().millisecondsSinceEpoch.toString() +
+            '.csv',
+      );
+      await file.writeAsString(csv, encoding: utf8, flush: true);
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'text/csv')],
+        text: tr('QR Studio batch export', 'Exportação em lote do QR Studio'),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(tr(
+            'Could not export the CSV file.',
+            'Não foi possível exportar o ficheiro CSV.',
+          )),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -137,7 +185,10 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
                           'https://example.com\nWi-Fi Guest\nMy product 001\nHello world',
                       alignLabelWithHint: true,
                     ),
-                    onChanged: (_) => setState(() => _values = []),
+                    onChanged: (_) => setState(() {
+                      _values = [];
+                      _duplicatesRemoved = 0;
+                    }),
                   ),
                   const SizedBox(height: 12),
                   GradientButton(
@@ -151,8 +202,28 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
                     const SizedBox(height: 23),
                     SectionHeading(
                       tr('${_values.length} codes created', '${_values.length} códigos criados'),
-                      action: tr('Share list', 'Partilhar lista'),
-                      onAction: _shareList,
+                      action: tr('Export CSV', 'Exportar CSV'),
+                      onAction: _exportCsv,
+                    ),
+                    if (_duplicatesRemoved > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 9),
+                        child: Text(
+                          _duplicatesRemoved.toString() +
+                              tr(' duplicate entries ignored', ' entradas repetidas ignoradas'),
+                          style: const TextStyle(
+                            color: StudioColors.muted,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _shareList,
+                        icon: const Icon(Icons.share_rounded, size: 17),
+                        label: Text(tr('Share values as text', 'Partilhar valores em texto')),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     GridView.builder(
