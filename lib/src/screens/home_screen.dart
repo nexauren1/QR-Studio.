@@ -16,6 +16,7 @@ class HomeScreen extends StatelessWidget {
     required this.onMore,
     required this.onBarcode,
     required this.onBulk,
+    required this.onAnalyze,
     required this.onOpenRecord,
   });
 
@@ -28,6 +29,7 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback onMore;
   final VoidCallback onBarcode;
   final VoidCallback onBulk;
+  final VoidCallback onAnalyze;
   final ValueChanged<CodeRecord> onOpenRecord;
 
   String tr(String en, String pt) => portuguese ? pt : en;
@@ -174,6 +176,13 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.auto_awesome_mosaic_rounded,
                   color: const Color(0xFF8C6CFF),
                   onTap: onBulk,
+                ),
+                ToolTile(
+                  title: tr('QR Analyzer', 'Analisador QR'),
+                  subtitle: tr('Inspect QR content and links', 'Analisar conteúdo e ligações'),
+                  icon: Icons.manage_search_rounded,
+                  color: StudioColors.cyan,
+                  onTap: onAnalyze,
                 ),
                 ToolTile(
                   title: tr('Settings', 'Definições'),
