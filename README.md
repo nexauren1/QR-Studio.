@@ -74,7 +74,7 @@ The APK is located at:
 
     build/app/outputs/flutter-apk/app-release.apk
 
-The workflow checks that the universal download remains below 30,000,000 bytes. Keep the symbol maps from build/symbols/ privately for crash analysis.
+The workflow reports the final APK size for visibility and uploads the universal APK as a build artifact. There is no fixed 30 MB rejection threshold: a larger file does not fail the build solely because of its size. Keep the symbol maps from build/symbols/ privately for crash analysis.
 
 ## Package
 
@@ -84,4 +84,4 @@ The workflow checks that the universal download remains below 30,000,000 bytes. 
 
 ## Product principles
 
-Build a complete, trustworthy tool first. Reduce download size through code/resource optimisation, not by removing useful features. The package-size check applies to the single universal download; the installed footprint includes both supported ARM native libraries.
+Build a complete, trustworthy tool first. Reduce download size through code/resource optimisation, not by removing useful features. The release package prioritises a single universal download that supports both ARM32 and ARM64 devices.
