@@ -542,22 +542,12 @@ class StudioLocalization {
   static String translate(String english, String portuguese, String code) {
     if (code == 'pt') return portuguese;
     if (code == 'en') return english;
+
     final translated = _translations[code]?[english];
     if (translated != null) return translated;
 
     final invalidFormat = RegExp(
-      r'^This value is not valid for (.+)\\. Check its length and characters\\.
-    final count = RegExp(r'^(\d+) codes created$').firstMatch(english);
-    if (count != null) {
-      final value = count.group(1);
-      if (code == 'es') return '$value códigos creados';
-      if (code == 'fr') return '$value codes créés';
-      if (code == 'de') return '$value Codes erstellt';
-    }
-    return english;
-  }
-}
-,
+      r'^This value is not valid for (.+)\. Check its length and characters\.$',
     ).firstMatch(english);
     if (invalidFormat != null) {
       final format = invalidFormat.group(1)!;
@@ -565,6 +555,7 @@ class StudioLocalization {
       if (code == 'fr') return 'Cette valeur n’est pas valide pour $format. Vérifiez sa longueur et ses caractères.';
       if (code == 'de') return 'Dieser Wert ist für $format ungültig. Prüfe Länge und Zeichen.';
     }
+
     final count = RegExp(r'^(\d+) codes created$').firstMatch(english);
     if (count != null) {
       final value = count.group(1);
