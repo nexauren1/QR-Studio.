@@ -5,10 +5,10 @@ if [ ! -d android ]; then
   flutter create --no-pub --platforms=android --org com.nexauren --project-name qr_studio .
 fi
 
-# Flutter's generated sample test targets the template app, not QR Studio.
-rm -rf test
+# Remove only Flutter's generated template test, preserving QR Studio tests.
+rm -f test/widget_test.dart
 
-# Keep the app entry point in Java; application screens and logic are Dart.
+# Keep Android launcher code in Java; application screens and logic are Dart.
 if [ -d android/app/src/main/kotlin ]; then
   while IFS= read -r kotlin_file; do
     [ -n "$kotlin_file" ] || continue

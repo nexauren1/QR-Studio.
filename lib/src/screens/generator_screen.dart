@@ -8,6 +8,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/code_record.dart';
+import '../services/qr_payload_builder.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
 
@@ -29,7 +30,6 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   final _primary = TextEditingController();
   final _secondary = TextEditingController();
   final _tertiary = TextEditingController();
-  final _fourth = TextEditingController();
 
   static const _foregrounds = <Color>[
     Color(0xFF090A16),
@@ -53,6 +53,7 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   bool _roundedModules = false;
   String? _generated;
   bool _busy = false;
+  DateTime _eventStart = DateTime.now().add(const Duration(hours: 1));
 
   String tr(String en, String pt) => widget.portuguese ? pt : en;
 
@@ -61,63 +62,45 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
     _primary.dispose();
     _secondary.dispose();
     _tertiary.dispose();
-    _fourth.dispose();
     super.dispose();
   }
 
-  String _escapeWifi(String value) => value
-      .replaceAll(r'\\', r'\\\\')
-      .replaceAll(';', r'\\;')
-      .replaceAll(',', r'\\,');
-
   String? _buildPayload() {
-    final first = _primary.text.trim();
-    final second = _secondary.text.trim();
-    final third = _tertiary.text.trim();
-    switch (_kind) {
-      case 'URL':
-        if (first.isEmpty) return null;
-        final value = first.startsWith('http://') ||
-                first.startsWith('https://')
-            ? first
-            : 'https://$first';
-        final uri = Uri.tryParse(value);
-        return uri != null && uri.hasAuthority ? value : null;
-      case 'Wi-Fi':
-        if (first.isEmpty) return null;
-        return 'WIFI:T:$_security;S:${_escapeWifi(first)};P:${_escapeWifi(second)};;';
-      case 'Contact':
-        if (first.isEmpty && second.isEmpty && third.isEmpty) return null;
-        return 'BEGIN:VCARD\nVERSION:3.0\nFN:$first\nTEL:$second\nEMAIL:$third\nEND:VCARD';
-      case 'Email':
-        if (first.isEmpty || !first.contains('@')) return null;
-        final query = <String, String>{};
-        if (second.isNotEmpty) query['subject'] = second;
-        if (third.isNotEmpty) query['body'] = third;
-        return Uri(scheme: 'mailto', path: first, queryParameters: query.isEmpty ? null : query).toString();
-      case 'Phone':
-        if (first.isEmpty) return null;
-        return 'tel:$first';
-      case 'SMS':
-        if (first.isEmpty) return null;
-        return 'SMSTO:$first:$second';
-      case 'Location':
-        final latitude = double.tryParse(first);
-        final longitude = double.tryParse(second);
-        if (latitude == null ||
-            longitude == null ||
-            latitude < -90 ||
-            latitude > 90 ||
-            longitude < -180 ||
-            longitude > 180) {
-          return null;
-        }
-        return 'geo:$latitude,$longitude?q=$latitude,$longitude';
-      default:
-        return first.isEmpty ? null : first;
-    }
+    return QrPayloadBuilder.build(
+      type: _kind,
+      primary: _primary.text,
+      secondary: _secondary.text,
+      tertiary: _kind == 'Wi-Fi' ? _security : _tertiary.text,
+      eventStart: _eventStart,
+    );
   }
 
+  Future<void> _pickEventDate() async {
+    final now = DateTime.now();
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _eventStart,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      _eventStart = DateTime(selected.year, selected.month, selected.day, _eventStart.hour, _eventStart.minute);
+      _generated = null;
+    });
+  }
+
+  Future<void> _pickEventTime() async {
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_eventStart),
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      _eventStart = DateTime(_eventStart.year, _eventStart.month, _eventStart.day, selected.hour, selected.minute);
+      _generated = null;
+    });
+  }
   void _generate() {
     final payload = _buildPayload();
     if (payload == null) {
@@ -318,6 +301,43 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
             maxLines: 3,
           ),
         ];
+      case 'WhatsApp':
+        return [
+          _field(
+            label: tr('WhatsApp number with country code', 'Número WhatsApp com indicativo'),
+            controller: _primary,
+            keyboardType: TextInputType.phone,
+            hint: '+258 84 123 4567',
+          ),
+          const SizedBox(height: 12),
+          _field(
+            label: tr('Pre-filled message (optional)', 'Mensagem pré-preenchida (opcional)'),
+            controller: _secondary,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 6),
+          Text(tr('Include the country code; the plus sign is optional.', 'Inclua o indicativo do país; o sinal + é opcional.'), style: const TextStyle(color: StudioColors.muted, fontSize: 11)),
+        ];
+      case 'Event':
+        final dateLabel = '${_eventStart.day.toString().padLeft(2, '0')}/${_eventStart.month.toString().padLeft(2, '0')}/${_eventStart.year}';
+        final timeLabel = '${_eventStart.hour.toString().padLeft(2, '0')}:${_eventStart.minute.toString().padLeft(2, '0')}';
+        return [
+          _field(label: tr('Event title', 'Nome do evento'), controller: _primary, hint: tr('e.g. Graduation ceremony', 'ex.: Cerimónia de graduação')),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: OutlinedButton.icon(onPressed: _pickEventDate, icon: const Icon(Icons.calendar_month_rounded), label: Text(dateLabel))),
+              const SizedBox(width: 8),
+              Expanded(child: OutlinedButton.icon(onPressed: _pickEventTime, icon: const Icon(Icons.schedule_rounded), label: Text(timeLabel))),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _field(label: tr('Location (optional)', 'Local (opcional)'), controller: _secondary),
+          const SizedBox(height: 12),
+          _field(label: tr('Description (optional)', 'Descrição (opcional)'), controller: _tertiary, maxLines: 3),
+          const SizedBox(height: 6),
+          Text(tr('Creates a calendar event QR. Default duration: one hour.', 'Cria um QR para evento de calendário. Duração padrão: uma hora.'), style: const TextStyle(color: StudioColors.muted, fontSize: 11)),
+        ];
       case 'Location':
         return [
           _field(
@@ -407,6 +427,8 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
       'Phone',
       'SMS',
       'Location',
+      'WhatsApp',
+      'Event',
     ];
     return Scaffold(
       appBar: AppBar(
