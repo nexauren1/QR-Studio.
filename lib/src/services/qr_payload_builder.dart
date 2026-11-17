@@ -20,7 +20,10 @@ class QrPayloadBuilder {
             ? first
             : 'https://' + first;
         final uri = Uri.tryParse(value);
-        return uri != null && uri.hasAuthority ? value : null;
+        return uri != null && uri.hasAuthority && uri.host.isNotEmpty &&
+                !RegExp(r'\s').hasMatch(value)
+            ? value
+            : null;
       case 'Wi-Fi':
         if (first.isEmpty) return null;
         return 'WIFI:T:' + third + ';S:' + _escapeWifi(first) +
