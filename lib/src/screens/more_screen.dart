@@ -13,6 +13,7 @@ class MoreScreen extends StatelessWidget {
     required this.onBarcode,
     required this.onBulk,
     required this.onHistory,
+    required this.onAnalyze,
     required this.onThemeChanged,
     required this.onLanguageChanged,
   });
@@ -24,6 +25,7 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onBarcode;
   final VoidCallback onBulk;
   final VoidCallback onHistory;
+  final VoidCallback onAnalyze;
   final ValueChanged<bool> onThemeChanged;
   final ValueChanged<bool> onLanguageChanged;
 
@@ -92,6 +94,13 @@ class MoreScreen extends StatelessWidget {
                   icon: Icons.history_rounded,
                   color: const Color(0xFFB56CFF),
                   onTap: onHistory,
+                ),
+                ToolTile(
+                  title: tr('QR Analyzer', 'Analisador QR'),
+                  subtitle: tr('Inspect QR content and links', 'Analisar conteúdo e ligações'),
+                  icon: Icons.manage_search_rounded,
+                  color: StudioColors.cyan,
+                  onTap: onAnalyze,
                 ),
               ],
             ),
