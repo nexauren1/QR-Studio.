@@ -30,11 +30,20 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
+  final _searchController = TextEditingController();
   String _filter = 'All';
+  String _query = '';
 
   String tr(String en, String pt) => widget.portuguese ? pt : en;
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   List<CodeRecord> get _filtered {
+    final query = _query.trim().toLowerCase();
     return widget.records.where((record) {
       if (widget.favoritesOnly && !record.isFavorite) return false;
       if (_filter == 'Generated' &&
@@ -45,6 +54,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (_filter == 'Scanned' &&
           !record.type.toLowerCase().contains('scan') &&
           !record.type.toLowerCase().contains('lido')) {
+        return false;
+      }
+      if (query.isNotEmpty &&
+          !record.data.toLowerCase().contains(query) &&
+          !record.type.toLowerCase().contains(query)) {
         return false;
       }
       return true;
@@ -68,7 +82,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
             const SizedBox(height: 12),
             SelectableText(record.data),
             const SizedBox(height: 18),
-            Row(
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
               children: [
                 OutlinedButton.icon(
                   onPressed: () async {
@@ -78,7 +94,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   icon: const Icon(Icons.copy_rounded),
                   label: Text(tr('Copy', 'Copiar')),
                 ),
-                const SizedBox(width: 10),
                 OutlinedButton.icon(
                   onPressed: () {
                     widget.onFavorite(record);
@@ -154,8 +169,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       'Códigos criados e lidos neste dispositivo'),
               style: const TextStyle(color: StudioColors.muted, fontSize: 12),
             ),
-            const SizedBox(height: 18),
-            if (!widget.favoritesOnly)
+            const SizedBox(height: 15),
+            TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _query = value),
+              decoration: InputDecoration(
+                hintText: tr('Search codes and content…',
+                    'Pesquisar códigos e conteúdo…'),
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _query = '');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+              ),
+            ),
+            if (!widget.favoritesOnly) ...[
+              const SizedBox(height: 14),
               Wrap(
                 spacing: 8,
                 children: [
@@ -173,6 +207,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       onTap: () => setState(() => _filter = 'Scanned')),
                 ],
               ),
+            ],
             const SizedBox(height: 15),
             if (items.isEmpty)
               StudioCard(
@@ -189,11 +224,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      widget.favoritesOnly
-                          ? tr('Tap the heart on a record to keep it here.',
-                              'Toque no coração de um registo para o guardar aqui.')
-                          : tr('Create or scan a code and it will appear here.',
-                              'Crie ou leia um código e ele aparecerá aqui.'),
+                      _query.isNotEmpty
+                          ? tr('No results match your search.',
+                              'Nenhum resultado corresponde à pesquisa.')
+                          : widget.favoritesOnly
+                              ? tr('Tap the heart on a record to keep it here.',
+                                  'Toque no coração de um registo para o guardar aqui.')
+                              : tr('Create or scan a code and it will appear here.',
+                                  'Crie ou leia um código e ele aparecerá aqui.'),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                           color: StudioColors.muted,

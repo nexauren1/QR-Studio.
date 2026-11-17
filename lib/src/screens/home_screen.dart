@@ -15,6 +15,7 @@ class HomeScreen extends StatelessWidget {
     required this.onFavorites,
     required this.onMore,
     required this.onBarcode,
+    required this.onBulk,
     required this.onOpenRecord,
   });
 
@@ -26,6 +27,7 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback onFavorites;
   final VoidCallback onMore;
   final VoidCallback onBarcode;
+  final VoidCallback onBulk;
   final ValueChanged<CodeRecord> onOpenRecord;
 
   String tr(String en, String pt) => portuguese ? pt : en;
@@ -165,6 +167,13 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.handyman_rounded,
                   color: StudioColors.cyan,
                   onTap: onMore,
+                ),
+                ToolTile(
+                  title: tr('Bulk QR Generator', 'Gerador QR em lote'),
+                  subtitle: tr('Create up to 50 codes', 'Criar até 50 códigos'),
+                  icon: Icons.auto_awesome_mosaic_rounded,
+                  color: const Color(0xFF8C6CFF),
+                  onTap: onBulk,
                 ),
                 ToolTile(
                   title: tr('Settings', 'Definições'),

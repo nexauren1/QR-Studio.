@@ -11,6 +11,7 @@ class MoreScreen extends StatelessWidget {
     required this.onGenerate,
     required this.onScan,
     required this.onBarcode,
+    required this.onBulk,
     required this.onHistory,
     required this.onThemeChanged,
     required this.onLanguageChanged,
@@ -21,6 +22,7 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onGenerate;
   final VoidCallback onScan;
   final VoidCallback onBarcode;
+  final VoidCallback onBulk;
   final VoidCallback onHistory;
   final ValueChanged<bool> onThemeChanged;
   final ValueChanged<bool> onLanguageChanged;
@@ -76,6 +78,13 @@ class MoreScreen extends StatelessWidget {
                   icon: Icons.view_week_rounded,
                   color: StudioColors.orange,
                   onTap: onBarcode,
+                ),
+                ToolTile(
+                  title: tr('Bulk QR Generator', 'Gerador QR em lote'),
+                  subtitle: tr('Create up to 50 codes', 'Criar até 50 códigos'),
+                  icon: Icons.auto_awesome_mosaic_rounded,
+                  color: const Color(0xFF8C6CFF),
+                  onTap: onBulk,
                 ),
                 ToolTile(
                   title: tr('History', 'Histórico'),

@@ -30,12 +30,29 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
-      - name: Build release APK
-        run: flutter build apk --release
+      - name: Build ARM APK variants
+        run: flutter build apk --release --split-per-abi --target-platform android-arm,android-arm64
 
-      - name: Upload APK
+      - name: Enforce 30 MB download ceiling
+        shell: bash
+        run: |
+          set -euo pipefail
+          max_bytes=$((30 * 1024 * 1024))
+          for apk in build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/app-arm64-v8a-release.apk; do
+            test -f "$apk"
+            size=$(stat -c%s "$apk")
+            echo "$apk: $(numfmt --to=iec-i --suffix=B "$size")"
+            if [ "$size" -gt "$max_bytes" ]; then
+              echo "::error::$apk exceeds the 30 MB download ceiling."
+              exit 1
+            fi
+          done
+
+      - name: Upload ARM APKs
         uses: actions/upload-artifact@v4
         with:
-          name: qr-studio-android-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: qr-studio-android-arm-apks
+          path: |
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           if-no-files-found: error

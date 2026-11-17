@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/code_record.dart';
 import '../screens/barcode_screen.dart';
+import '../screens/bulk_generator_screen.dart';
 import '../screens/generator_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/home_screen.dart';
@@ -51,8 +52,17 @@ class _QRStudioAppState extends State<QRStudioApp> {
   Future<void> _saveRecords() => StudioStorage.saveRecords(_records);
 
   void _addRecord(CodeRecord record) {
+    _addRecords([record]);
+  }
+
+  void _addRecords(List<CodeRecord> records) {
+    if (records.isEmpty) return;
     setState(() {
-      _records = [record, ..._records.where((item) => item.id != record.id)];
+      final incomingIds = records.map((item) => item.id).toSet();
+      _records = [
+        ...records.reversed,
+        ..._records.where((item) => !incomingIds.contains(item.id)),
+      ].take(500).toList();
     });
     _saveRecords();
   }
@@ -89,6 +99,15 @@ class _QRStudioAppState extends State<QRStudioApp> {
     ));
   }
 
+  void _openBulkGenerator() {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => BulkGeneratorScreen(
+        portuguese: _portuguese,
+        onSaved: _addRecords,
+      ),
+    ));
+  }
+
   void _openScanner() {
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => ScannerScreen(
@@ -107,12 +126,11 @@ class _QRStudioAppState extends State<QRStudioApp> {
     ));
   }
 
-  void _openHistory({bool favoritesOnly = false}) {
+  void _openHistory() {
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => HistoryScreen(
         records: _records,
         portuguese: _portuguese,
-        favoritesOnly: favoritesOnly,
         onFavorite: _toggleFavorite,
         onDelete: _deleteRecord,
         onClear: _clearHistory,
@@ -153,7 +171,8 @@ class _QRStudioAppState extends State<QRStudioApp> {
                           records: _records,
                           onGenerate: _openGenerator,
                           onScan: _openScanner,
-                          onHistory: () => _openHistory(),
+                          onHistory: _openHistory,
+                          onBulk: _openBulkGenerator,
                           onFavorites: () => setState(() => _tab = 1),
                           onMore: () => setState(() => _tab = 2),
                           onBarcode: _openBarcodeGenerator,
@@ -175,7 +194,8 @@ class _QRStudioAppState extends State<QRStudioApp> {
                               onGenerate: _openGenerator,
                               onScan: _openScanner,
                               onBarcode: _openBarcodeGenerator,
-                              onHistory: () => _openHistory(),
+                              onBulk: _openBulkGenerator,
+                              onHistory: _openHistory,
                               onThemeChanged: (value) {
                                 setState(() => _darkMode = value);
                                 StudioStorage.saveDarkMode(value);

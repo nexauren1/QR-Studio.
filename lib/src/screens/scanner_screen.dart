@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/code_record.dart';
 import '../theme/studio_theme.dart';
@@ -21,10 +24,12 @@ class ScannerScreen extends StatefulWidget {
   State<ScannerScreen> createState() => _ScannerScreenState();
 }
 
-class _ScannerScreenState extends State<ScannerScreen> {
+class _ScannerScreenState extends State<ScannerScreen>
+    with WidgetsBindingObserver {
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     autoStart: true,
+    autoZoom: true,
   );
   bool _handling = false;
   bool _torchOn = false;
@@ -32,27 +37,55 @@ class _ScannerScreenState extends State<ScannerScreen> {
   String tr(String en, String pt) => widget.portuguese ? pt : en;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
-    _controller.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_controller.dispose());
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_controller.start());
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_controller.stop());
+    }
   }
 
   Future<void> _handleDetection(BarcodeCapture capture) async {
     if (_handling) return;
-    final code = capture.barcodes
-        .map((barcode) => barcode.rawValue)
-        .firstWhere((value) => value != null && value.isNotEmpty,
-            orElse: () => null);
-    if (code == null) return;
-    await _showResult(code, 'Scanned QR / Barcode');
+    final barcode = capture.barcodes.firstWhere(
+      (item) => item.rawValue != null && item.rawValue!.isNotEmpty,
+      orElse: () => Barcode(rawValue: null),
+    );
+    final value = barcode.rawValue;
+    if (value == null || value.isEmpty) return;
+    await HapticFeedback.selectionClick();
+    await _showResult(value, barcode.format.name);
   }
 
-  Future<void> _showResult(String value, String type) async {
+  bool _isActionableLink(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        ['http', 'https', 'mailto', 'tel'].contains(uri.scheme.toLowerCase());
+  }
+
+  Future<void> _showResult(String value, String format) async {
     if (_handling || !mounted) return;
     _handling = true;
     await _controller.stop();
     if (!mounted) return;
-    final save = await showModalBottomSheet<bool>(
+    final uri = Uri.tryParse(value);
+    final canOpen = _isActionableLink(value) && uri != null;
+    final action = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -68,34 +101,47 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 const Icon(Icons.check_circle_rounded,
                     color: StudioColors.green),
                 const SizedBox(width: 9),
-                Text(tr('Code detected', 'Código detetado'),
+                Expanded(
+                  child: Text(tr('Code detected', 'Código detetado'),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w900)),
+                ),
+                Text(format.toUpperCase(),
                     style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w900)),
+                        color: StudioColors.muted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800)),
               ],
             ),
             const SizedBox(height: 14),
             SelectableText(value,
                 style: const TextStyle(fontSize: 14, height: 1.4)),
             const SizedBox(height: 20),
-            Row(
+            Wrap(
+              spacing: 9,
+              runSpacing: 9,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: value));
-                      if (sheetContext.mounted) Navigator.pop(sheetContext, false);
-                    },
-                    icon: const Icon(Icons.copy_rounded),
-                    label: Text(tr('Copy', 'Copiar')),
-                  ),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: value));
+                    if (sheetContext.mounted) {
+                      Navigator.pop(sheetContext, 'copied');
+                    }
+                  },
+                  icon: const Icon(Icons.copy_rounded),
+                  label: Text(tr('Copy', 'Copiar')),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GradientButton(
-                    label: tr('Save to history', 'Guardar no histórico'),
-                    icon: Icons.bookmark_add_rounded,
-                    onPressed: () => Navigator.pop(sheetContext, true),
+                if (canOpen)
+                  FilledButton.icon(
+                    onPressed: () => Navigator.pop(sheetContext, 'open'),
+                    icon: const Icon(Icons.open_in_new_rounded),
+                    label: Text(tr('Open', 'Abrir')),
                   ),
+                GradientButton(
+                  compact: true,
+                  label: tr('Save to history', 'Guardar no histórico'),
+                  icon: Icons.bookmark_add_rounded,
+                  onPressed: () => Navigator.pop(sheetContext, 'save'),
                 ),
               ],
             ),
@@ -104,14 +150,33 @@ class _ScannerScreenState extends State<ScannerScreen> {
       ),
     );
 
-    if (save == true) {
+    if (action == 'save') {
       widget.onSaved(CodeRecord(
         id: DateTime.now().microsecondsSinceEpoch.toString(),
         data: value,
-        type: type,
+        type: 'Scanned · $format',
         createdAt: DateTime.now(),
       ));
+    } else if (action == 'open' && uri != null) {
+      try {
+        await launchUrl(
+          uri,
+          mode: uri.scheme == 'http' || uri.scheme == 'https'
+              ? LaunchMode.externalApplication
+              : LaunchMode.platformDefault,
+        );
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(tr('Could not open this result.',
+                  'Não foi possível abrir este resultado.'))));
+        }
+      }
+    } else if (action == 'copied' && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr('Value copied.', 'Valor copiado.'))));
     }
+
     _handling = false;
     if (mounted) await _controller.start();
   }
@@ -127,11 +192,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
         return;
       }
       final capture = await _controller.analyzeImage(image.path);
-      final value = capture?.barcodes
-          .map((barcode) => barcode.rawValue)
-          .firstWhere((item) => item != null && item.isNotEmpty,
-              orElse: () => null);
-      if (value == null) {
+      final barcode = capture?.barcodes.firstWhere(
+        (item) => item.rawValue != null && item.rawValue!.isNotEmpty,
+        orElse: () => Barcode(rawValue: null),
+      );
+      final value = barcode?.rawValue;
+      if (value == null || value.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(tr('No code found in this image.',
@@ -139,7 +205,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           await _controller.start();
         }
       } else {
-        await _showResult(value, 'Scanned from image');
+        await _showResult(value, barcode!.format.name);
       }
     } catch (_) {
       if (mounted) {
@@ -158,7 +224,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: Text(tr('Scan QR Code', 'Ler código QR'),
+        title: Text(tr('Scan QR & Barcodes', 'Ler QR e códigos de barras'),
             style: const TextStyle(fontWeight: FontWeight.w800)),
         actions: [
           IconButton(
@@ -193,14 +259,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
           ),
           Positioned(
-            left: 28,
-            right: 28,
+            left: 24,
+            right: 24,
             bottom: 28,
             child: Column(
               children: [
                 Text(
-                  tr('Point the camera at a QR code or barcode',
-                      'Aponte a câmara para um código QR ou código de barras'),
+                  tr('Align a QR code or barcode inside the frame',
+                      'Alinhe um código QR ou de barras dentro da moldura'),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: Colors.white,
@@ -208,29 +274,28 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       fontWeight: FontWeight.w600,
                       shadows: [Shadow(blurRadius: 8, color: Colors.black)]),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Row(
                   children: [
+                    const Icon(Icons.camera_alt_rounded,
+                        color: StudioColors.green, size: 17),
+                    const SizedBox(width: 7),
                     Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.camera_alt_rounded),
-                        label: Text(tr('Camera', 'Câmara')),
-                        style: FilledButton.styleFrom(
-                            backgroundColor: StudioColors.purple,
-                            foregroundColor: Colors.white),
+                      child: Text(
+                        tr('Live camera scanner', 'Leitor de câmara ativo'),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _pickImage,
-                        icon: const Icon(Icons.photo_library_rounded),
-                        label: Text(tr('Gallery', 'Galeria')),
-                        style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xE61A1D39),
-                            foregroundColor: Colors.white),
-                      ),
+                    FilledButton.icon(
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.photo_library_rounded),
+                      label: Text(tr('Gallery', 'Galeria')),
+                      style: FilledButton.styleFrom(
+                          backgroundColor: StudioColors.purple,
+                          foregroundColor: Colors.white),
                     ),
                   ],
                 ),

@@ -8,7 +8,7 @@ fi
 # Flutter's generated sample test targets the template app, not QR Studio.
 rm -rf test
 
-# Keep the application entry point in Java rather than Kotlin.
+# Keep the app entry point in Java; application screens and logic are Dart.
 if [ -d android/app/src/main/kotlin ]; then
   while IFS= read -r kotlin_file; do
     [ -n "$kotlin_file" ] || continue
