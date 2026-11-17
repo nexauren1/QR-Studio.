@@ -5,6 +5,9 @@ if [ ! -d android ]; then
   flutter create --no-pub --platforms=android --org com.nexauren --project-name qr_studio .
 fi
 
+# Flutter's generated sample test targets the template app, not QR Studio.
+rm -rf test
+
 # Keep the application entry point in Java rather than Kotlin.
 if [ -d android/app/src/main/kotlin ]; then
   while IFS= read -r kotlin_file; do
