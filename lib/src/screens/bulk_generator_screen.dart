@@ -24,6 +24,7 @@ class BulkGeneratorScreen extends StatefulWidget {
 class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
   final _controller = TextEditingController();
   List<String> _values = [];
+  bool _busy = false;
 
   String tr(String en, String pt) => widget.portuguese ? pt : en;
 
@@ -33,7 +34,11 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
     super.dispose();
   }
 
-  void _generate() {
+  Future<void> _generate() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    await Future.delayed(const Duration(milliseconds: 320));
+    if (!mounted) return;
     final unique = <String>{};
     for (final line in _controller.text.split(RegExp(r'[\r\n]+'))) {
       final value = line.trim();
@@ -41,12 +46,16 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
       if (unique.length >= 50) break;
     }
     if (unique.isEmpty) {
+      setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(tr('Add one item per line.', 'Introduza um item por linha.'))));
       return;
     }
     final values = unique.toList();
-    setState(() => _values = values);
+    setState(() {
+      _values = values;
+      _busy = false;
+    });
     final now = DateTime.now();
     widget.onSaved(values
         .map((value) => CodeRecord(
@@ -73,7 +82,14 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
         title: Text(tr('Bulk QR Generator', 'Gerador QR em lote'),
             style: const TextStyle(fontWeight: FontWeight.w800)),
       ),
-      body: Column(
+      body: StudioProcessingOverlay(
+        active: _busy,
+        title: tr('Building QR batch', 'A criar lote QR'),
+        message: tr(
+          'Preparing your unique entries and generating previews…',
+          'A preparar entradas únicas e a gerar pré-visualizações…',
+        ),
+        child: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
@@ -125,9 +141,11 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
                   ),
                   const SizedBox(height: 12),
                   GradientButton(
-                    label: tr('Generate batch', 'Gerar lote'),
+                    label: _busy
+                        ? tr('Preparing…', 'A preparar…')
+                        : tr('Generate batch', 'Gerar lote'),
                     icon: Icons.qr_code_2_rounded,
-                    onPressed: _generate,
+                    onPressed: _busy ? null : _generate,
                   ),
                   if (_values.isNotEmpty) ...[
                     const SizedBox(height: 23),
@@ -208,7 +226,7 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 }

@@ -30,6 +30,7 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
   String _format = 'Code 128';
   String? _value;
   bool _sharing = false;
+  bool _busy = false;
 
   String tr(String en, String pt) => widget.portuguese ? pt : en;
 
@@ -54,14 +55,20 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
     super.dispose();
   }
 
-  void _generate() {
+  Future<void> _generate() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    await Future.delayed(const Duration(milliseconds: 320));
+    if (!mounted) return;
     final value = _controller.text.trim();
     if (value.isEmpty) {
+      setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(tr('Enter a value first.', 'Introduza um valor.'))));
       return;
     }
     if (!_barcode.isValid(value)) {
+      setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(tr(
           'This value is not valid for $_format. Check its length and characters.',
@@ -70,7 +77,10 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
       ));
       return;
     }
-    setState(() => _value = value);
+    setState(() {
+      _value = value;
+      _busy = false;
+    });
     widget.onSaved(CodeRecord(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       data: value,
@@ -119,7 +129,15 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
         title: Text(tr('Create Barcode', 'Criar código de barras'),
             style: const TextStyle(fontWeight: FontWeight.w800)),
       ),
-      body: SingleChildScrollView(
+      body: StudioProcessingOverlay(
+        active: _busy || _sharing,
+        title: _sharing
+            ? tr('Preparing barcode export', 'A preparar exportação')
+            : tr('Generating barcode', 'A gerar código de barras'),
+        message: _sharing
+            ? tr('Rendering a scalable SVG file…', 'A gerar um ficheiro SVG escalável…')
+            : tr('Validating data and rendering your barcode…', 'A validar os dados e a gerar o código…'),
+        child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,9 +192,11 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
                   ),
                   const SizedBox(height: 14),
                   GradientButton(
-                    label: tr('Generate Barcode', 'Gerar código de barras'),
+                    label: _busy
+                        ? tr('Generating…', 'A gerar…')
+                        : tr('Generate Barcode', 'Gerar código de barras'),
                     icon: Icons.view_week_rounded,
-                    onPressed: _generate,
+                    onPressed: _busy ? null : _generate,
                   ),
                 ],
               ),
@@ -250,7 +270,7 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
             ],
           ],
         ),
-      ),
+      )),
     );
   }
 }

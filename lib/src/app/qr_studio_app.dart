@@ -91,7 +91,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openGenerator() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
+    Navigator.of(context).push(StudioPageRoute<void>(
       builder: (_) => GeneratorScreen(
         portuguese: _portuguese,
         onSaved: _addRecord,
@@ -100,7 +100,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openBulkGenerator() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
+    Navigator.of(context).push(StudioPageRoute<void>(
       builder: (_) => BulkGeneratorScreen(
         portuguese: _portuguese,
         onSaved: _addRecords,
@@ -109,7 +109,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openScanner() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
+    Navigator.of(context).push(StudioPageRoute<void>(
       builder: (_) => ScannerScreen(
         portuguese: _portuguese,
         onSaved: _addRecord,
@@ -118,7 +118,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openBarcodeGenerator() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
+    Navigator.of(context).push(StudioPageRoute<void>(
       builder: (_) => BarcodeScreen(
         portuguese: _portuguese,
         onSaved: _addRecord,
@@ -127,7 +127,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _openHistory() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
+    Navigator.of(context).push(StudioPageRoute<void>(
       builder: (_) => HistoryScreen(
         records: _records,
         portuguese: _portuguese,

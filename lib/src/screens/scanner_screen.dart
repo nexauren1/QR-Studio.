@@ -33,6 +33,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   );
   bool _handling = false;
   bool _torchOn = false;
+  bool _imageBusy = false;
 
   String tr(String en, String pt) => widget.portuguese ? pt : en;
 
@@ -182,6 +183,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   }
 
   Future<void> _pickImage() async {
+    if (_imageBusy || _handling) return;
     try {
       await _controller.stop();
       final image =
@@ -191,24 +193,26 @@ class _ScannerScreenState extends State<ScannerScreen>
         await _controller.start();
         return;
       }
+      setState(() => _imageBusy = true);
       final capture = await _controller.analyzeImage(image.path);
+      if (!mounted) return;
+      setState(() => _imageBusy = false);
       final barcode = capture?.barcodes.firstWhere(
         (item) => item.rawValue != null && item.rawValue!.isNotEmpty,
         orElse: () => Barcode(rawValue: null),
       );
       final value = barcode?.rawValue;
       if (value == null || value.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(tr('No code found in this image.',
-                  'Não foi encontrado nenhum código nesta imagem.'))));
-          await _controller.start();
-        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(tr('No code found in this image.',
+                'Não foi encontrado nenhum código nesta imagem.'))));
+        await _controller.start();
       } else {
         await _showResult(value, barcode!.format.name);
       }
     } catch (_) {
       if (mounted) {
+        setState(() => _imageBusy = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(tr('Could not read this image.',
                 'Não foi possível ler esta imagem.'))));
@@ -242,7 +246,14 @@ class _ScannerScreenState extends State<ScannerScreen>
           ),
         ],
       ),
-      body: Stack(
+      body: StudioProcessingOverlay(
+        active: _imageBusy,
+        title: tr('Analysing image', 'A analisar imagem'),
+        message: tr(
+          'Looking for QR codes and supported barcodes…',
+          'A procurar códigos QR e códigos de barras compatíveis…',
+        ),
+        child: Stack(
         fit: StackFit.expand,
         children: [
           MobileScanner(
@@ -303,7 +314,7 @@ class _ScannerScreenState extends State<ScannerScreen>
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 }

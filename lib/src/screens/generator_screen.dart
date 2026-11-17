@@ -53,6 +53,8 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   bool _roundedModules = false;
   String? _generated;
   bool _busy = false;
+  String _processingTitle = 'Processing';
+  String _processingMessage = 'Preparing your QR code…';
   DateTime _eventStart = DateTime.now().add(const Duration(hours: 1));
 
   String tr(String en, String pt) => widget.portuguese ? pt : en;
@@ -101,16 +103,31 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
       _generated = null;
     });
   }
-  void _generate() {
+  Future<void> _generate() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _processingTitle = tr('Building your QR code', 'A criar o seu código QR');
+      _processingMessage = tr(
+        'Preparing the content and rendering a high-quality code…',
+        'A preparar o conteúdo e a gerar um código de alta qualidade…',
+      );
+    });
+    await Future.delayed(const Duration(milliseconds: 380));
+    if (!mounted) return;
     final payload = _buildPayload();
     if (payload == null) {
+      setState(() => _busy = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(tr(
               'Check the required fields and try again.',
               'Verifique os campos obrigatórios e tente novamente.'))));
       return;
     }
-    setState(() => _generated = payload);
+    setState(() {
+      _generated = payload;
+      _busy = false;
+    });
     widget.onSaved(CodeRecord(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       data: payload,
@@ -132,7 +149,14 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   Future<void> _exportPng() async {
     final value = _generated;
     if (value == null || _busy) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _processingTitle = tr('Exporting QR image', 'A exportar imagem QR');
+      _processingMessage = tr(
+        'Rendering a crisp 1200 px PNG and preparing the share sheet…',
+        'A gerar um PNG nítido de 1200 px e a preparar a partilha…',
+      );
+    });
     try {
       final painter = QrPainter(
         data: value,
@@ -446,7 +470,11 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: StudioProcessingOverlay(
+        active: _busy,
+        title: _processingTitle,
+        message: _processingMessage,
+        child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
         child: Column(
@@ -523,9 +551,11 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                   ),
                   const SizedBox(height: 8),
                   GradientButton(
-                    label: tr('Generate QR', 'Gerar QR'),
+                    label: _busy
+                        ? tr('Preparing…', 'A preparar…')
+                        : tr('Generate QR', 'Gerar QR'),
                     icon: Icons.auto_awesome_rounded,
-                    onPressed: _generate,
+                    onPressed: _busy ? null : _generate,
                   ),
                 ],
               ),
@@ -614,7 +644,7 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
             ),
           ],
         ),
-      ),
+      )),
     );
   }
 }

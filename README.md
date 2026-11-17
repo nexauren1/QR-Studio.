@@ -1,6 +1,6 @@
 # QR Studio
 
-QR Studio by Nexauren is a Flutter app for creating, scanning, styling, organising and sharing QR codes and barcodes. Its visual direction follows the approved Nexauren reference: deep navy surfaces, electric purple-to-blue gradients, cyan accents, rounded cards and animated transitions.
+QR Studio by Nexauren is a Flutter app for creating, scanning, styling, organising and sharing QR codes and barcodes. Its visual direction follows the approved Nexauren reference: deep navy surfaces, electric purple-to-blue gradients, cyan accents, rounded cards and polished animated transitions.
 
 ## Features
 
@@ -20,7 +20,7 @@ QR Studio by Nexauren is a Flutter app for creating, scanning, styling, organisi
 ### Scanning
 - Live camera scanning for QR codes and supported barcode formats.
 - Torch, camera switching and automatic zoom.
-- Scan from an image in the gallery.
+- Scan from an image in the gallery, with a visible image-analysis state.
 - Result details, copy and open supported links.
 - Haptic feedback on detection.
 
@@ -38,15 +38,16 @@ QR Studio by Nexauren is a Flutter app for creating, scanning, styling, organisi
 - Local-first storage; no account or cloud service is required.
 
 ## Visual and performance decisions
-
 - UI surfaces, logo mark and decoration are drawn with Flutter widgets and gradients; no large background PNGs are bundled.
+- Tool cards use animated entrance, refined borders and subtle colour glows.
+- Tool screens share a consistent fade / slide / scale transition.
+- QR, barcode, bulk and gallery-image actions show a dedicated processing panel.
 - QR history stores payload text, type, date and favourite state—not rendered QR images.
 - The home screen is the initial route; generator, scanner and barcode screens are created when opened.
 - The bundled scanner model is kept so scanning remains available on first use without downloading a model.
-- Release builds use Flutter's release shrinking, per-ABI APKs, Dart obfuscation and split debug symbols.
+- Release builds use Dart obfuscation and split debug symbols.
 
 ## Technology
-
 - Flutter / Dart for application screens and logic.
 - Java Android launcher activity; no Kotlin app source.
 - qr_flutter for QR rendering and PNG export.
@@ -63,13 +64,17 @@ Install Flutter 3.29 or newer, then:
     bash tool/bootstrap_android.sh
     flutter run
 
-## Build Android APKs
+## Build the universal Android APK
 
-The GitHub Actions workflow produces separate ARM 32-bit and ARM64 APKs. Each individual downloadable APK is checked against a strict 30,000,000-byte ceiling.
+The release workflow produces one universal ARM APK containing both ARMv7 (32-bit) and ARM64 (64-bit). Upload this single file to the app listing; users do not need to choose between two APK variants.
 
-    flutter build apk --release --split-per-abi --target-platform android-arm,android-arm64 --obfuscate --split-debug-info=build/symbols
+    flutter build apk --release --target-platform android-arm,android-arm64 --obfuscate --split-debug-info=build/symbols
 
-The APKs are located in build/app/outputs/flutter-apk/. Keep the matching symbol maps from build/symbols/ for crash analysis.
+The APK is located at:
+
+    build/app/outputs/flutter-apk/app-release.apk
+
+The workflow checks that the universal download remains below 30,000,000 bytes. Keep the symbol maps from build/symbols/ privately for crash analysis.
 
 ## Package
 
@@ -79,4 +84,4 @@ The APKs are located in build/app/outputs/flutter-apk/. Keep the matching symbol
 
 ## Product principles
 
-Build a complete, trustworthy tool first. Reduce download size through code/resource optimisation and architecture-specific packages, not by removing useful features. The 30 MB ceiling applies to each downloadable APK, not the installed footprint.
+Build a complete, trustworthy tool first. Reduce download size through code/resource optimisation, not by removing useful features. The package-size check applies to the single universal download; the installed footprint includes both supported ARM native libraries.
