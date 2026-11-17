@@ -245,7 +245,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
   }
 
   void _showRecord(CodeRecord record) {
-    final modalContext = _navigatorKey.currentContext;
+    final modalContext = _navigatorKey.currentState?.overlay?.context;
     if (modalContext == null) return;
     showModalBottomSheet<void>(
       context: modalContext,
