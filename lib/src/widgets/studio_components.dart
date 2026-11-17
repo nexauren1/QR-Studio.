@@ -195,7 +195,7 @@ class ToolTile extends StatelessWidget {
       duration: const Duration(milliseconds: 460),
       curve: Curves.easeOutCubic,
       builder: (context, scale, child) {
-        final progress = ((scale - .94) / .06).clamp(0.0, 1.0);
+        final progress = ((scale - .94) / .06).clamp(0.0, 1.0).toDouble();
         return Opacity(
           opacity: progress,
           child: Transform.translate(
