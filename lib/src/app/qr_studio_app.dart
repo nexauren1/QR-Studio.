@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../models/code_record.dart';
 import '../screens/barcode_screen.dart';
@@ -9,6 +10,7 @@ import '../screens/home_screen.dart';
 import '../screens/more_screen.dart';
 import '../screens/qr_analyzer_screen.dart';
 import '../screens/scanner_screen.dart';
+import '../services/studio_localization.dart';
 import '../services/studio_storage.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
@@ -23,7 +25,8 @@ class QRStudioApp extends StatefulWidget {
 class _QRStudioAppState extends State<QRStudioApp> {
   List<CodeRecord> _records = [];
   bool _darkMode = true;
-  bool _portuguese = true;
+  String _languageCode = 'pt';
+  bool get _portuguese => _languageCode == 'pt';
   bool _ready = false;
   int _tab = 0;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
@@ -38,18 +41,18 @@ class _QRStudioAppState extends State<QRStudioApp> {
     final values = await Future.wait<Object>([
       StudioStorage.loadRecords(),
       StudioStorage.loadDarkMode(),
-      StudioStorage.loadPortuguese(),
+      StudioStorage.loadLanguageCode(),
     ]);
     if (!mounted) return;
     setState(() {
       _records = values[0] as List<CodeRecord>;
       _darkMode = values[1] as bool;
-      _portuguese = values[2] as bool;
+      _languageCode = values[2] as String;
       _ready = true;
     });
   }
 
-  String tr(String en, String pt) => _portuguese ? pt : en;
+  String tr(String en, String pt) => StudioLocalization.translate(en, pt, _languageCode);
 
   Future<void> _saveRecords() => StudioStorage.saveRecords(_records);
 
@@ -96,6 +99,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
     _navigatorKey.currentState?.push(StudioPageRoute<void>(
       builder: (_) => GeneratorScreen(
         portuguese: _portuguese,
+        languageCode: _languageCode,
         onSaved: _addRecord,
       ),
     ));
@@ -142,7 +146,7 @@ class _QRStudioAppState extends State<QRStudioApp> {
 
   void _openAnalyzer() {
     _navigatorKey.currentState?.push(StudioPageRoute<void>(
-      builder: (_) => QrAnalyzerScreen(portuguese: _portuguese),
+      builder: (_) => QrAnalyzerScreen(portuguese: _portuguese, languageCode: _languageCode),
     ));
   }
 
@@ -150,6 +154,13 @@ class _QRStudioAppState extends State<QRStudioApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigatorKey,
+      locale: Locale(_languageCode),
+      supportedLocales: StudioLocalization.supportedLocales,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       title: 'QR Studio',
       debugShowCheckedModeBanner: false,
       theme: StudioTheme.light,
@@ -212,8 +223,8 @@ class _QRStudioAppState extends State<QRStudioApp> {
                                 StudioStorage.saveDarkMode(value);
                               },
                               onLanguageChanged: (value) {
-                                setState(() => _portuguese = value);
-                                StudioStorage.savePortuguese(value);
+                                setState(() => _languageCode = value);
+                                StudioStorage.saveLanguageCode(value);
                               },
                             ),
                 ),
