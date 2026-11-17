@@ -34,7 +34,8 @@ QR Studio by Nexauren is a Flutter app for creating, scanning, styling, organisi
 - QR content analyzer for websites, Wi-Fi payloads, contact cards, calendar events, geographic coordinates, phone numbers, email actions and plain text.
 - Local history with search and generated/scanned filters.
 - Favorites, individual delete and clear-history actions.
-- Portuguese and English interface.
+- Five selectable offline interface languages: Portuguese, English, Spanish, French and German.
+- Export the current filtered history as a UTF-8 CSV file.
 - Dark and light themes.
 - Local-first storage; no account or cloud service is required.
 
@@ -75,7 +76,7 @@ The APK is located at:
 
     build/app/outputs/flutter-apk/app-release.apk
 
-The workflow reports the final APK size for visibility and uploads the universal APK as a build artifact. There is no fixed 30 MB rejection threshold: a larger file does not fail the build solely because of its size. Keep the symbol maps from build/symbols/ privately for crash analysis.
+The workflow validates the permanent upload keystore from GitHub Actions secrets, signs the release APK, verifies its signature and uploads the universal APK as a build artifact. Configure these repository secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Keep the Dart symbol maps private for crash analysis. There is no fixed 30 MB rejection threshold: a larger file does not fail the build solely because of its size. Keep the symbol maps from build/symbols/ privately for crash analysis.
 
 ## Package
 
