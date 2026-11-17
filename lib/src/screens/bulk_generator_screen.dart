@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/code_record.dart';
+import '../services/studio_localization.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
 
@@ -15,10 +16,12 @@ class BulkGeneratorScreen extends StatefulWidget {
   const BulkGeneratorScreen({
     super.key,
     required this.portuguese,
+    required this.languageCode,
     required this.onSaved,
   });
 
   final bool portuguese;
+  final String languageCode;
   final ValueChanged<List<CodeRecord>> onSaved;
 
   @override
@@ -31,7 +34,7 @@ class _BulkGeneratorScreenState extends State<BulkGeneratorScreen> {
   bool _busy = false;
   int _duplicatesRemoved = 0;
 
-  String tr(String en, String pt) => widget.portuguese ? pt : en;
+  String tr(String en, String pt) => StudioLocalization.translate(en, pt, widget.languageCode);
 
   @override
   void dispose() {
