@@ -129,7 +129,7 @@ class StudioLocalization {
     if (code == 'en') return english;
     final translated = _translations[code]?[english];
     if (translated != null) return translated;
-    final count = RegExp(r'^(\\d+) codes created$').firstMatch(english);
+    final count = RegExp(r'^(\d+) codes created$').firstMatch(english);
     if (count != null) {
       final value = count.group(1);
       if (code == 'es') return '$value códigos creados';
