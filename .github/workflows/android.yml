@@ -26,22 +26,46 @@ jobs:
 
       - name: Configure permanent Android signing key
         env:
-          KEYSTORE_BASE64: \${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: \${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: \${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: \${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
-          : "\${KEYSTORE_BASE64:?Missing GitHub secret KEYSTORE_BASE64}"
-          : "\${KEYSTORE_PASSWORD:?Missing GitHub secret KEYSTORE_PASSWORD}"
-          : "\${KEY_ALIAS:?Missing GitHub secret KEY_ALIAS}"
-          : "\${KEY_PASSWORD:?Missing GitHub secret KEY_PASSWORD}"
+          : "${KEYSTORE_BASE64:?Missing GitHub secret KEYSTORE_BASE64}"
+          : "${KEYSTORE_PASSWORD:?Missing GitHub secret KEYSTORE_PASSWORD}"
+          : "${KEY_ALIAS:?Missing GitHub secret KEY_ALIAS}"
+          : "${KEY_PASSWORD:?Missing GitHub secret KEY_PASSWORD}"
           mkdir -p android/app
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/qr-studio-upload-keystore.jks
-          test -s android/app/qr-studio-upload-keystore.jks
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          encoded = os.environ["KEYSTORE_BASE64"].strip()
+          if encoded.startswith("base64:"):
+              encoded = encoded.split(":", 1)[1]
+          if encoded.startswith("data:") and "," in encoded:
+              encoded = encoded.split(",", 1)[1]
+          encoded = "".join(encoded.split()).strip('"').strip("'")
+          encoded += "=" * (-len(encoded) % 4)
+          try:
+              keystore = base64.b64decode(encoded, altchars=b"-_", validate=True)
+          except Exception as error:
+              raise SystemExit(
+                  "KEYSTORE_BASE64 is not valid Base64. Copy only the Base64 value "
+                  "for the .jks file into this GitHub secret."
+              ) from error
+          if not keystore:
+              raise SystemExit("The decoded Android keystore is empty.")
+          path = Path("android/app/qr-studio-upload-keystore.jks")
+          path.write_bytes(keystore)
+          path.chmod(0o600)
+          PY
           printf 'storeFile=qr-studio-upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
+          chmod 600 android/key.properties
           keytool -list -v \
             -keystore android/app/qr-studio-upload-keystore.jks \
             -storepass "$KEYSTORE_PASSWORD" \
