@@ -179,6 +179,18 @@ class StudioLocalization {
       ' duplicate entries ignored': ' entradas duplicadas omitidas',
       'Share values as text': 'Compartir valores como texto',
       'All codes were added to your local history.': 'Todos los códigos se añadieron a tu historial local.',
+      'Open menu': 'Abrir menú',
+      'Barcode Generator': 'Generador de códigos de barras',
+      'History': 'Historial',
+      'Save to history': 'Guardar en el historial',
+      'Value copied.': 'Valor copiado.',
+      'History exported.': 'Historial exportado.',
+      'No results match your search.': 'No hay resultados que coincidan con tu búsqueda.',
+      'Paste': 'Pegar',
+      'Analyze content': 'Analizar contenido',
+      'Copy content': 'Copiar contenido',
+      'Your barcode': 'Tu código de barras',
+      'Export SVG': 'Exportar SVG',
     'fr': {
       'Home':'Accueil','Favorites':'Favoris','More':'Plus','Favorite':'Favori','Done':'Terminé',
       'Open menu':'Ouvrir le menu','Smart QR Tools':'Outils QR intelligents',
@@ -339,6 +351,15 @@ class StudioLocalization {
       ' duplicate entries ignored': ' doublons ignorés',
       'Share values as text': 'Partager les valeurs en texte',
       'All codes were added to your local history.': 'Tous les codes ont été ajoutés à votre historique local.',
+      'Code 128 format': 'Format Code 128',
+      'Code detected': 'Code détecté',
+      'Value copied.': 'Valeur copiée.',
+      'History exported.': 'Historique exporté.',
+      'Nothing here yet': 'Rien pour le moment',
+      'Paste': 'Coller',
+      'Analysis result': 'Résultat de l’analyse',
+      'Your barcode': 'Votre code-barres',
+      'Export SVG': 'Exporter SVG',
     'de': {
       'Home':'Startseite','Favorites':'Favoriten','More':'Mehr','Favorite':'Favorit','Done':'Fertig',
       'Open menu':'Menü öffnen','Smart QR Tools':'Intelligente QR-Tools',
@@ -497,6 +518,17 @@ class StudioLocalization {
       ' duplicate entries ignored': ' doppelte Einträge ignoriert',
       'Share values as text': 'Werte als Text teilen',
       'All codes were added to your local history.': 'Alle Codes wurden deinem lokalen Verlauf hinzugefügt.',
+      'Code 128 format': 'Code-128-Format',
+      'Content copied.': 'Inhalt kopiert.',
+      'Your QR code': 'Dein QR-Code',
+      'Export PNG': 'PNG exportieren',
+      'Code detected': 'Code erkannt',
+      'Could not export history.': 'Verlauf konnte nicht exportiert werden.',
+      'Export history CSV': 'Verlauf als CSV exportieren',
+      'Search codes and content…': 'Codes und Inhalte suchen…',
+      'Nothing here yet': 'Noch nichts vorhanden',
+      'Analyze content': 'Inhalt analysieren',
+      'Analysis result': 'Analyseergebnis',
   };
 
   static String languageName(String code) => languages
@@ -507,6 +539,27 @@ class StudioLocalization {
     if (code == 'en') return english;
     final translated = _translations[code]?[english];
     if (translated != null) return translated;
+
+    final invalidFormat = RegExp(
+      r'^This value is not valid for (.+)\\. Check its length and characters\\.
+    final count = RegExp(r'^(\d+) codes created$').firstMatch(english);
+    if (count != null) {
+      final value = count.group(1);
+      if (code == 'es') return '$value códigos creados';
+      if (code == 'fr') return '$value codes créés';
+      if (code == 'de') return '$value Codes erstellt';
+    }
+    return english;
+  }
+}
+,
+    ).firstMatch(english);
+    if (invalidFormat != null) {
+      final format = invalidFormat.group(1)!;
+      if (code == 'es') return 'Este valor no es válido para $format. Comprueba su longitud y sus caracteres.';
+      if (code == 'fr') return 'Cette valeur n’est pas valide pour $format. Vérifiez sa longueur et ses caractères.';
+      if (code == 'de') return 'Dieser Wert ist für $format ungültig. Prüfe Länge und Zeichen.';
+    }
     final count = RegExp(r'^(\d+) codes created$').firstMatch(english);
     if (count != null) {
       final value = count.group(1);
