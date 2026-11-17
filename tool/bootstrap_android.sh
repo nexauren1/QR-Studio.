@@ -56,10 +56,10 @@ groovy = Path("android/app/build.gradle")
 
 kts_config = """
 // QR_STUDIO_SIGNING_CONFIG
-val qrStudioKeyProperties = java.util.Properties()
+val qrStudioKeyProperties = Properties()
 val qrStudioKeyPropertiesFile = rootProject.file("key.properties")
 if (qrStudioKeyPropertiesFile.exists()) {
-    qrStudioKeyProperties.load(java.io.FileInputStream(qrStudioKeyPropertiesFile))
+    qrStudioKeyProperties.load(FileInputStream(qrStudioKeyPropertiesFile))
 }
 android {
     signingConfigs {
@@ -115,6 +115,8 @@ android {
 if kts.exists():
     content = kts.read_text(encoding="utf-8")
     if "QR_STUDIO_SIGNING_CONFIG" not in content:
+        if "import java.util.Properties" not in content:
+            content = "import java.util.Properties\nimport java.io.FileInputStream\n\n" + content
         kts.write_text(content.rstrip() + "\n\n" + kts_config, encoding="utf-8")
 elif groovy.exists():
     content = groovy.read_text(encoding="utf-8")
