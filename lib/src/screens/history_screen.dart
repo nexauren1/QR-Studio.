@@ -131,7 +131,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         for (final record in records)
           [record.createdAt.toIso8601String(), record.type, record.data, record.isFavorite ? 'yes' : 'no'],
       ];
-      final csv = '\\uFEFF' + rows.map((row) => row.map(cell).join(',')).join('\\r\\n');
+      final csv = '\uFEFF' + rows.map((row) => row.map(cell).join(',')).join('\r\n');
       final directory = await getTemporaryDirectory();
       final file = File('${directory.path}/qr_studio_history_${DateTime.now().millisecondsSinceEpoch}.csv');
       await file.writeAsString(csv, encoding: utf8, flush: true);
