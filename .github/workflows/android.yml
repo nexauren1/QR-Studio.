@@ -2,7 +2,7 @@ name: Android Universal APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, release/final-launch]
   workflow_dispatch:
 
 permissions:
@@ -24,41 +24,70 @@ jobs:
       - name: Generate Android runner (Java activity)
         run: bash tool/bootstrap_android.sh
 
+      - name: Configure permanent Android signing key
+        env:
+          KEYSTORE_BASE64: \${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: \${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: \${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: \${{ secrets.KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "\${KEYSTORE_BASE64:?Missing GitHub secret KEYSTORE_BASE64}"
+          : "\${KEYSTORE_PASSWORD:?Missing GitHub secret KEYSTORE_PASSWORD}"
+          : "\${KEY_ALIAS:?Missing GitHub secret KEY_ALIAS}"
+          : "\${KEY_PASSWORD:?Missing GitHub secret KEY_PASSWORD}"
+          mkdir -p android/app
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/qr-studio-upload-keystore.jks
+          test -s android/app/qr-studio-upload-keystore.jks
+          printf 'storeFile=qr-studio-upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
+          keytool -list -v \
+            -keystore android/app/qr-studio-upload-keystore.jks \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS" \
+            -keypass "$KEY_PASSWORD" >/dev/null
+          echo "Release keystore decoded and validated."
+
       - name: Resolve dependencies
         run: flutter pub get
 
       - name: Analyze Dart code
         run: flutter analyze --no-fatal-infos
 
-      - name: Run unit tests
+      - name: Run unit and widget tests
         run: flutter test
 
-      - name: Build one universal ARM APK
+      - name: Build signed universal ARM APK
         run: flutter build apk --release --target-platform android-arm,android-arm64 --obfuscate --split-debug-info=build/symbols
 
-      - name: Report universal APK size
+      - name: Verify APK signature and report size
         shell: bash
         run: |
           set -euo pipefail
           apk="build/app/outputs/flutter-apk/app-release.apk"
           test -f "$apk"
+          apksigner verify --verbose --print-certs "$apk" > build/apk-signature.txt
+          cat build/apk-signature.txt
           size=$(stat -c%s "$apk")
           readable_size=$(numfmt --to=iec-i --suffix=B "$size")
-          echo "Universal APK: $readable_size ($size bytes)"
+          echo "Signed universal APK: $readable_size ($size bytes)"
           {
-            echo "### Universal Android APK"
+            echo "### Signed Universal Android APK"
             echo "- File: app-release.apk"
             echo "- Download size: $readable_size ($size bytes)"
             echo "- Architectures: ARM32 (armeabi-v7a) and ARM64 (arm64-v8a)"
+            echo "- Signing: permanent QR Studio release keystore"
             echo "- Delivery: one APK containing both supported ARM architectures"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload universal APK
         uses: actions/upload-artifact@v4
         with:
-          name: qr-studio-universal-apk
+          name: qr-studio-universal-apk-signed
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+          retention-days: 30
 
       - name: Upload Dart symbol maps
         if: success()
@@ -67,3 +96,4 @@ jobs:
           name: qr-studio-dart-symbols
           path: build/symbols/
           if-no-files-found: warn
+          retention-days: 30
