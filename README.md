@@ -82,6 +82,7 @@ The workflow validates the permanent upload keystore from GitHub Actions secrets
 
 - Android application ID: com.nexauren.qr_studio
 - Display name: QR Studio
+- Initial publication version: 0.0.1 (version code 1)
 - Publisher: Nexauren
 
 ## Product principles

@@ -44,8 +44,18 @@ if manifest.exists():
             1,
         )
     content = re.sub(r'android:label="[^"]+"', 'android:label="QR Studio"', content, count=1)
+    content = re.sub(r'android:icon="[^"]+"', 'android:icon="@mipmap/ic_launcher"', content, count=1)
     manifest.write_text(content, encoding="utf-8")
 PY
+
+# Install the approved QR Studio launcher icon.
+launcher_icon="tool/android-icons/ic_launcher.png"
+test -f "$launcher_icon"
+res_dir="android/app/src/main/res"
+mkdir -p "$res_dir/mipmap-xxxhdpi"
+find "$res_dir" -type f \\( -name ic_launcher.png -o -name ic_launcher_foreground.png \\) -delete
+rm -f "$res_dir/mipmap-anydpi-v26/ic_launcher.xml"
+cp "$launcher_icon" "$res_dir/mipmap-xxxhdpi/ic_launcher.png"
 
 # Configure permanent QR Studio release signing when key.properties is supplied by CI.
 python3 - <<'PY'
