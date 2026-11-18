@@ -52,10 +52,10 @@ PY
 launcher_icon="tool/android-icons/ic_launcher.png"
 test -f "$launcher_icon"
 res_dir="android/app/src/main/res"
-mkdir -p "$res_dir/mipmap-xxxhdpi"
+mkdir -p "$res_dir/mipmap-xxhdpi"
 find "$res_dir" -type f -name 'ic_launcher*.png' -delete
 rm -f "$res_dir/mipmap-anydpi-v26/ic_launcher.xml"
-cp "$launcher_icon" "$res_dir/mipmap-xxxhdpi/ic_launcher.png"
+cp "$launcher_icon" "$res_dir/mipmap-xxhdpi/ic_launcher.png"
 
 # Configure permanent QR Studio release signing when key.properties is supplied by CI.
 python3 - <<'PY'
