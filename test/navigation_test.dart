@@ -20,7 +20,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(GeneratorScreen), findsOneWidget);
 
-    await tester.pageBack();
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Histórico QR'));
@@ -28,7 +28,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(HistoryScreen), findsOneWidget);
 
-    await tester.pageBack();
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Analisador QR'));

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/studio_localization.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
 
@@ -7,6 +8,7 @@ class MoreScreen extends StatelessWidget {
   const MoreScreen({
     super.key,
     required this.portuguese,
+    required this.languageCode,
     required this.darkMode,
     required this.onGenerate,
     required this.onScan,
@@ -19,6 +21,7 @@ class MoreScreen extends StatelessWidget {
   });
 
   final bool portuguese;
+  final String languageCode;
   final bool darkMode;
   final VoidCallback onGenerate;
   final VoidCallback onScan;
@@ -27,9 +30,9 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onHistory;
   final VoidCallback onAnalyze;
   final ValueChanged<bool> onThemeChanged;
-  final ValueChanged<bool> onLanguageChanged;
+  final ValueChanged<String> onLanguageChanged;
 
-  String tr(String en, String pt) => portuguese ? pt : en;
+  String tr(String en, String pt) => StudioLocalization.translate(en, pt, languageCode);
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +134,7 @@ class MoreScreen extends StatelessWidget {
                         color: StudioColors.cyan),
                     title: Text(tr('Language', 'Idioma'),
                         style: const TextStyle(fontWeight: FontWeight.w700)),
-                    subtitle: Text(portuguese ? 'Português' : 'English'),
+                    subtitle: Text(StudioLocalization.languageName(languageCode)),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => showModalBottomSheet<void>(
                       context: context,
@@ -142,30 +145,19 @@ class MoreScreen extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              ListTile(
-                                leading: const Text('🇵🇹'),
-                                title: const Text('Português'),
-                                trailing: portuguese
-                                    ? const Icon(Icons.check_circle,
-                                        color: StudioColors.purple)
-                                    : null,
-                                onTap: () {
-                                  onLanguageChanged(true);
-                                  Navigator.pop(sheetContext);
-                                },
-                              ),
-                              ListTile(
-                                leading: const Text('🇬🇧'),
-                                title: const Text('English'),
-                                trailing: !portuguese
-                                    ? const Icon(Icons.check_circle,
-                                        color: StudioColors.purple)
-                                    : null,
-                                onTap: () {
-                                  onLanguageChanged(false);
-                                  Navigator.pop(sheetContext);
-                                },
-                              ),
+                              for (final language in StudioLocalization.languages)
+                                ListTile(
+                                  leading: Text(language.flag),
+                                  title: Text(language.label),
+                                  trailing: languageCode == language.code
+                                      ? const Icon(Icons.check_circle,
+                                          color: StudioColors.purple)
+                                      : null,
+                                  onTap: () {
+                                    onLanguageChanged(language.code);
+                                    Navigator.pop(sheetContext);
+                                  },
+                                ),
                             ],
                           ),
                         ),

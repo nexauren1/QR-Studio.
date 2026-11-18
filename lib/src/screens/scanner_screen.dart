@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/code_record.dart';
+import '../services/studio_localization.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
 
@@ -14,10 +15,12 @@ class ScannerScreen extends StatefulWidget {
   const ScannerScreen({
     super.key,
     required this.portuguese,
+    required this.languageCode,
     required this.onSaved,
   });
 
   final bool portuguese;
+  final String languageCode;
   final ValueChanged<CodeRecord> onSaved;
 
   @override
@@ -35,7 +38,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   bool _torchOn = false;
   bool _imageBusy = false;
 
-  String tr(String en, String pt) => widget.portuguese ? pt : en;
+  String tr(String en, String pt) => StudioLocalization.translate(en, pt, widget.languageCode);
 
   @override
   void initState() {

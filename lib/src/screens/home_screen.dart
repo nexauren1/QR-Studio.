@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/code_record.dart';
+import '../services/studio_localization.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
 
@@ -8,6 +9,7 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
     required this.portuguese,
+    required this.languageCode,
     required this.records,
     required this.onGenerate,
     required this.onScan,
@@ -21,6 +23,7 @@ class HomeScreen extends StatelessWidget {
   });
 
   final bool portuguese;
+  final String languageCode;
   final List<CodeRecord> records;
   final VoidCallback onGenerate;
   final VoidCallback onScan;
@@ -32,7 +35,7 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback onAnalyze;
   final ValueChanged<CodeRecord> onOpenRecord;
 
-  String tr(String en, String pt) => portuguese ? pt : en;
+  String tr(String en, String pt) => StudioLocalization.translate(en, pt, languageCode);
 
   @override
   Widget build(BuildContext context) {

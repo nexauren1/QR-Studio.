@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../models/code_record.dart';
 import '../services/qr_payload_builder.dart';
+import '../services/studio_localization.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
 
@@ -16,10 +17,12 @@ class GeneratorScreen extends StatefulWidget {
   const GeneratorScreen({
     super.key,
     required this.portuguese,
+    required this.languageCode,
     required this.onSaved,
   });
 
   final bool portuguese;
+  final String languageCode;
   final ValueChanged<CodeRecord> onSaved;
 
   @override
@@ -57,7 +60,7 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   String _processingMessage = 'Preparing your QR code…';
   DateTime _eventStart = DateTime.now().add(const Duration(hours: 1));
 
-  String tr(String en, String pt) => widget.portuguese ? pt : en;
+  String tr(String en, String pt) => StudioLocalization.translate(en, pt, widget.languageCode);
 
   @override
   void dispose() {

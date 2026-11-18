@@ -1,7 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 
 import '../models/code_record.dart';
+import '../services/studio_localization.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
 
@@ -10,6 +17,7 @@ class HistoryScreen extends StatefulWidget {
     super.key,
     required this.records,
     required this.portuguese,
+    required this.languageCode,
     required this.onFavorite,
     required this.onDelete,
     required this.onClear,
@@ -19,6 +27,7 @@ class HistoryScreen extends StatefulWidget {
 
   final List<CodeRecord> records;
   final bool portuguese;
+  final String languageCode;
   final bool favoritesOnly;
   final bool embedded;
   final ValueChanged<CodeRecord> onFavorite;
@@ -34,7 +43,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _filter = 'All';
   String _query = '';
 
-  String tr(String en, String pt) => widget.portuguese ? pt : en;
+  String tr(String en, String pt) => StudioLocalization.translate(en, pt, widget.languageCode);
 
   @override
   void dispose() {
@@ -112,6 +121,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  Future<void> _exportHistoryCsv() async {
+    final records = _filtered;
+    if (records.isEmpty) return;
+    try {
+      String cell(String value) => '"${value.replaceAll('"', '""')}"';
+      final rows = <List<String>>[
+        ['Created at', 'Type', 'Content', 'Favorite'],
+        for (final record in records)
+          [record.createdAt.toIso8601String(), record.type, record.data, record.isFavorite ? 'yes' : 'no'],
+      ];
+      final csv = '\uFEFF' + rows.map((row) => row.map(cell).join(',')).join('\r\n');
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/qr_studio_history_${DateTime.now().millisecondsSinceEpoch}.csv');
+      await file.writeAsString(csv, encoding: utf8, flush: true);
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'text/csv')],
+        text: tr('QR Studio history export', 'Exportação do histórico QR Studio'),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr('History exported.', 'Histórico exportado.'))),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr('Could not export history.', 'Não foi possível exportar o histórico.'))),
+        );
+      }
+    }
+  }
+
   Widget _content(BuildContext context) {
     final items = _filtered;
     return SafeArea(
@@ -132,6 +173,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         fontSize: 25, fontWeight: FontWeight.w900),
                   ),
                 ),
+                if (widget.records.isNotEmpty)
+                  IconButton(
+                    tooltip: tr('Export history CSV', 'Exportar histórico CSV'),
+                    onPressed: _exportHistoryCsv,
+                    icon: const Icon(Icons.file_download_outlined),
+                  ),
                 if (!widget.favoritesOnly && widget.records.isNotEmpty)
                   IconButton(
                     tooltip: tr('Clear history', 'Limpar histórico'),
@@ -247,6 +294,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: _HistoryTile(
                       record: record,
                       portuguese: widget.portuguese,
+                      languageCode: widget.languageCode,
                       onTap: () => _showDetails(record),
                       onFavorite: () => widget.onFavorite(record),
                       onDelete: () => widget.onDelete(record),
@@ -305,6 +353,7 @@ class _HistoryTile extends StatelessWidget {
   const _HistoryTile({
     required this.record,
     required this.portuguese,
+    required this.languageCode,
     required this.onTap,
     required this.onFavorite,
     required this.onDelete,
@@ -312,6 +361,7 @@ class _HistoryTile extends StatelessWidget {
 
   final CodeRecord record;
   final bool portuguese;
+  final String languageCode;
   final VoidCallback onTap;
   final VoidCallback onFavorite;
   final VoidCallback onDelete;
@@ -379,7 +429,7 @@ class _HistoryTile extends StatelessWidget {
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'delete',
-                child: Text(portuguese ? 'Eliminar' : 'Delete'),
+                child: Text(StudioLocalization.translate('Delete', 'Eliminar', languageCode)),
               ),
             ],
           ),

@@ -7,7 +7,8 @@ import '../models/code_record.dart';
 class StudioStorage {
   static const _recordsKey = 'qr_studio.records.v1';
   static const _darkKey = 'qr_studio.dark';
-  static const _languageKey = 'qr_studio.language_pt';
+  static const _languageKey = 'qr_studio.language_code';
+  static const _legacyLanguageKey = 'qr_studio.language_pt';
 
   static Future<List<CodeRecord>> loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
@@ -44,13 +45,17 @@ class StudioStorage {
     await prefs.setBool(_darkKey, value);
   }
 
-  static Future<bool> loadPortuguese() async {
+  static Future<String> loadLanguageCode() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_languageKey) ?? true;
+    final saved = prefs.getString(_languageKey);
+    if (saved != null && const ['pt', 'en', 'es', 'fr', 'de'].contains(saved)) return saved;
+    final legacy = prefs.getBool(_legacyLanguageKey);
+    return legacy == null || legacy ? 'pt' : 'en';
   }
 
-  static Future<void> savePortuguese(bool value) async {
+  static Future<void> saveLanguageCode(String value) async {
+    final code = const ['pt', 'en', 'es', 'fr', 'de'].contains(value) ? value : 'pt';
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_languageKey, value);
+    await prefs.setString(_languageKey, code);
   }
 }

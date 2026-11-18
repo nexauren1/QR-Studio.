@@ -3,13 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/qr_content_analyzer.dart';
+import '../services/studio_localization.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
 
 class QrAnalyzerScreen extends StatefulWidget {
-  const QrAnalyzerScreen({super.key, required this.portuguese});
+  const QrAnalyzerScreen({super.key, required this.portuguese, required this.languageCode});
 
   final bool portuguese;
+  final String languageCode;
 
   @override
   State<QrAnalyzerScreen> createState() => _QrAnalyzerScreenState();
@@ -20,7 +22,7 @@ class _QrAnalyzerScreenState extends State<QrAnalyzerScreen> {
   QrAnalysisResult? _result;
   bool _opening = false;
 
-  String tr(String en, String pt) => widget.portuguese ? pt : en;
+  String tr(String en, String pt) => StudioLocalization.translate(en, pt, widget.languageCode);
 
   @override
   void dispose() {

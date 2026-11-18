@@ -8,6 +8,7 @@ import 'package:barcode_widget/barcode_widget.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/code_record.dart';
+import '../services/studio_localization.dart';
 import '../theme/studio_theme.dart';
 import '../widgets/studio_components.dart';
 
@@ -15,10 +16,12 @@ class BarcodeScreen extends StatefulWidget {
   const BarcodeScreen({
     super.key,
     required this.portuguese,
+    required this.languageCode,
     required this.onSaved,
   });
 
   final bool portuguese;
+  final String languageCode;
   final ValueChanged<CodeRecord> onSaved;
 
   @override
@@ -32,7 +35,7 @@ class _BarcodeScreenState extends State<BarcodeScreen> {
   bool _sharing = false;
   bool _busy = false;
 
-  String tr(String en, String pt) => widget.portuguese ? pt : en;
+  String tr(String en, String pt) => StudioLocalization.translate(en, pt, widget.languageCode);
 
   Barcode get _barcode {
     switch (_format) {
