@@ -53,7 +53,7 @@ launcher_icon="tool/android-icons/ic_launcher.png"
 test -f "$launcher_icon"
 res_dir="android/app/src/main/res"
 mkdir -p "$res_dir/mipmap-xxxhdpi"
-find "$res_dir" -type f \\( -name ic_launcher.png -o -name ic_launcher_foreground.png \\) -delete
+find "$res_dir" -type f -name 'ic_launcher*.png' -delete
 rm -f "$res_dir/mipmap-anydpi-v26/ic_launcher.xml"
 cp "$launcher_icon" "$res_dir/mipmap-xxxhdpi/ic_launcher.png"
 
